@@ -1,0 +1,14 @@
+[package]
+name = "mid2ptcop"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ptcow.version = "0.2.1"
+ptcow.default-features = false
+midly = "0.5.3"
+
+[dev-dependencies]
+clap.version = "4.5"
+clap.features = ["derive"]
+soundfont = "0.1.0"
