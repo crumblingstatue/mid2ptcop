@@ -170,8 +170,8 @@ pub fn write_midi_to_pxtone(
     // TODO: Might not be correct, also individual tracks might have their own tempo
     // TODO: Magic number pulled out of thin air
     song.master.timing.bpm = ms_per_beat_to_bpm(max_tempo);
-    song.master.loop_points.last = max_clock
-        / (song.master.timing.ticks_per_beat as u32 * song.master.timing.beats_per_meas as u32);
+    // Unset the last point (let it be calculated by PxTone)
+    song.master.loop_points.last = None;
 
     // PxTone events seem to need to be stored in order of increasing clock value
     song.events.eves.sort_by_key(|ev| ev.tick);
