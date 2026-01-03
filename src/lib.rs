@@ -24,19 +24,28 @@ fn get_max_tempo(tracks: &[midly::Track]) -> u32 {
     max
 }
 
+/// Midi conversion error
+#[derive(Debug, thiserror::Error)]
+pub enum ConvError {
+    #[error("Non-parallel track midis are not supported")]
+    NonParallel,
+}
+
 /// Write midi song to pxtone
 pub fn write_midi_to_pxtone(
     mid_data: &[u8],
     herd: &mut Herd,
     song: &mut Song,
     base_key: u8,
-) -> Output {
+) -> Result<Output, ConvError> {
     song.events.eves.clear();
     herd.units.clear();
     let mut used_programs: UsedPrograms = HashMap::new();
     let (header, track_iter) = midly::parse(mid_data).unwrap();
     // We only support parallel laid out tracks
-    assert!(header.format == midly::Format::Parallel);
+    if header.format != midly::Format::Parallel {
+        return Err(ConvError::NonParallel);
+    }
     let tracks = track_iter.collect_tracks().unwrap();
     let ticks_per_beat = match header.timing {
         midly::Timing::Metrical(u15) => u15.as_int(),
@@ -175,7 +184,7 @@ pub fn write_midi_to_pxtone(
 
     // PxTone events seem to need to be stored in order of increasing clock value
     song.events.eves.sort_by_key(|ev| ev.tick);
-    Output { used_programs }
+    Ok(Output { used_programs })
 }
 
 fn push_key_event(

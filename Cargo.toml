@@ -8,6 +8,7 @@ rust-version = "1.91"
 ptcow.version = "0.3.0"
 ptcow.default-features = false
 midly = "0.5.3"
+thiserror = "2.0.17"
 
 [dev-dependencies]
 clap.version = "4.5"

@@ -156,7 +156,7 @@ fn main() {
     song.fmt.ver = ptcow::FmtVer::V5;
     let mut herd = Herd::default();
     let mid_data = std::fs::read(&args.midi_path).unwrap();
-    let out = write_midi_to_pxtone(&mid_data, &mut herd, &mut song, 32);
+    let out = write_midi_to_pxtone(&mid_data, &mut herd, &mut song, 32).unwrap();
     if let Some(sf_path) = &args.sf_path {
         let mut used_programs: Vec<_> = out.used_programs.iter().collect();
         used_programs.sort_by_key(|p| *p.1);

@@ -199,6 +199,7 @@ dependencies = [
  "midly",
  "ptcow",
  "soundfont",
+ "thiserror",
 ]
 
 [[package]]
