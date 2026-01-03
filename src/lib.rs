@@ -38,8 +38,6 @@ pub fn write_midi_to_pxtone(
     song: &mut Song,
     base_key: u8,
 ) -> Result<Output, ConvError> {
-    song.events.eves.clear();
-    herd.units.clear();
     let mut used_programs: UsedPrograms = HashMap::new();
     let (header, track_iter) = midly::parse(mid_data).unwrap();
     // We only support parallel laid out tracks
@@ -51,6 +49,8 @@ pub fn write_midi_to_pxtone(
         midly::Timing::Metrical(u15) => u15.as_int(),
         midly::Timing::Timecode(_fps, _) => todo!(),
     };
+    song.events.eves.clear();
+    herd.units.clear();
     song.master.timing.ticks_per_beat = ticks_per_beat;
     let max_tempo = get_max_tempo(&tracks);
     let mut max_clock = 0;
