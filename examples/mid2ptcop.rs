@@ -159,7 +159,7 @@ fn main() {
     let out = write_midi_to_pxtone(&mid_data, &mut herd, &mut song, 32).unwrap();
     if let Some(sf_path) = &args.sf_path {
         let mut used_programs: Vec<_> = out.used_programs.iter().collect();
-        used_programs.sort_by_key(|p| *p.1);
+        used_programs.sort_by_key(|p| p.1.0);
         let used_programs: Vec<u16> = used_programs
             .into_iter()
             .map(|p| p.0.as_int() as u16)

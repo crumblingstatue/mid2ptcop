@@ -5,7 +5,8 @@ edition = "2024"
 rust-version = "1.91"
 
 [dependencies]
-ptcow.version = "0.3.0"
+#ptcow.version = "0.3.0"
+ptcow.git = "https://github.com/crumblingstatue/ptcow.git"
 ptcow.default-features = false
 midly = "0.5.3"
 thiserror = "2.0.17"

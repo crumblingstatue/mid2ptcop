@@ -1,10 +1,10 @@
 use {
     midly::{MetaMessage, MidiMessage, TrackEventKind, num::u7},
-    ptcow::{Event, EventPayload, Herd, Song, Unit, UnitIdx},
+    ptcow::{Event, EventPayload, Herd, Song, Unit, UnitIdx, VoiceIdx},
     std::collections::HashMap,
 };
 
-pub type UsedPrograms = HashMap<u7, u32>;
+pub type UsedPrograms = HashMap<u7, VoiceIdx>;
 
 pub struct Output {
     pub used_programs: UsedPrograms,
@@ -117,7 +117,9 @@ pub fn write_midi_to_pxtone(
                     }
                     MidiMessage::ProgramChange { program } => {
                         let len = used_programs.len();
-                        let idx = used_programs.entry(program).or_insert(len as u32);
+                        let idx = used_programs
+                            .entry(program)
+                            .or_insert(VoiceIdx(len.try_into().unwrap()));
                         eprintln!("Instrument change of {track_idx} to {program}");
                         song.events.eves.push(Event {
                             payload: EventPayload::SetVoice(*idx),
