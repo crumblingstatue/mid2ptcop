@@ -228,8 +228,9 @@ dependencies = [
 
 [[package]]
 name = "ptcow"
-version = "0.3.0"
-source = "git+https://github.com/crumblingstatue/ptcow.git#ff435c0e5ca4cb0021c0815a75524a45cc299c28"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72dfbc0df063223322774adfa85730c77df98983abcc9255d524e19094964047"
 dependencies = [
  "arrayvec",
  "bitflags",
