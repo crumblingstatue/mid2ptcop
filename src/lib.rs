@@ -153,7 +153,7 @@ pub fn write_midi_to_pxtone(
                 },
                 TrackEventKind::Meta(meta_message) => match meta_message {
                     MetaMessage::TrackName(name_bytes) => {
-                        eprintln!("Track name: {}", std::str::from_utf8(name_bytes).unwrap());
+                        eprintln!("Track name: {:?}", std::str::from_utf8(name_bytes));
                     }
                     MetaMessage::EndOfTrack => {}
                     MetaMessage::Tempo(u24) => {
