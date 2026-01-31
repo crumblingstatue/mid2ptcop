@@ -10,21 +10,20 @@ pub struct Output {
     pub used_programs: UsedPrograms,
 }
 
-fn get_max_tempo(tracks: &[midly::Track]) -> Option<u32> {
-    let mut max: Option<u32> = None;
+/// Assume first tempo is "default" tempo.
+///
+/// We can't really handle songs with changing tempos.
+fn guess_tempo(tracks: &[midly::Track]) -> Option<u32> {
     for track in tracks {
         for ev in track {
             if let TrackEventKind::Meta(msg) = ev.kind
                 && let MetaMessage::Tempo(u24) = msg
             {
-                match &mut max {
-                    Some(max) => *max = (*max).max(u24.as_int()),
-                    None => max = Some(u24.as_int()),
-                }
+                return Some(u24.as_int());
             }
         }
     }
-    max
+    None
 }
 
 /// Midi conversion error
@@ -44,10 +43,10 @@ pub fn write_midi_to_pxtone(
         midly::Timing::Metrical(u15) => u15.as_int(),
         midly::Timing::Timecode(_fps, _) => todo!(),
     };
+    song.master.timing.bpm = guess_tempo(&tracks).map_or(120.0, ms_per_beat_to_bpm);
     song.events.eves.clear();
     herd.units.clear();
     song.master.timing.ticks_per_beat = ticks_per_beat;
-    let max_tempo = get_max_tempo(&tracks);
     let mut max_clock = 0;
     let mut unit_counter = UnitIdx(0);
     for (track_idx, track) in tracks.iter().enumerate() {
@@ -173,9 +172,6 @@ pub fn write_midi_to_pxtone(
             unit_counter.0 += 1;
         }
     }
-    // TODO: Might not be correct, also individual tracks might have their own tempo
-    // TODO: Magic number pulled out of thin air
-    song.master.timing.bpm = max_tempo.map_or(120.0, ms_per_beat_to_bpm);
     // Unset the last point (let it be calculated by PxTone)
     song.master.loop_points.last = None;
 
