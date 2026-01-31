@@ -10,14 +10,17 @@ pub struct Output {
     pub used_programs: UsedPrograms,
 }
 
-fn get_max_tempo(tracks: &[midly::Track]) -> u32 {
-    let mut max = 0;
+fn get_max_tempo(tracks: &[midly::Track]) -> Option<u32> {
+    let mut max: Option<u32> = None;
     for track in tracks {
         for ev in track {
             if let TrackEventKind::Meta(msg) = ev.kind
                 && let MetaMessage::Tempo(u24) = msg
             {
-                max = max.max(u24.as_int())
+                match &mut max {
+                    Some(max) => *max = (*max).max(u24.as_int()),
+                    None => max = Some(u24.as_int()),
+                }
             }
         }
     }
@@ -152,10 +155,13 @@ pub fn write_midi_to_pxtone(
                         eprintln!("Track name: {:?}", std::str::from_utf8(name_bytes));
                     }
                     MetaMessage::EndOfTrack => {}
-                    MetaMessage::Tempo(u24) => {
-                        let ratio = max_tempo as f64 / u24.as_int() as f64;
-                        clock_mul = ratio;
-                    }
+                    MetaMessage::Tempo(u24) => match max_tempo {
+                        Some(max_tempo) => {
+                            let ratio = max_tempo as f64 / u24.as_int() as f64;
+                            clock_mul = ratio;
+                        }
+                        None => clock_mul = 1.0,
+                    },
                     MetaMessage::TimeSignature(num, denom, cpt, npq_32nd) => {
                         eprintln!("Time sig: {num} {denom} {cpt} {npq_32nd}");
                     }
@@ -177,7 +183,7 @@ pub fn write_midi_to_pxtone(
     }
     // TODO: Might not be correct, also individual tracks might have their own tempo
     // TODO: Magic number pulled out of thin air
-    song.master.timing.bpm = ms_per_beat_to_bpm(max_tempo);
+    song.master.timing.bpm = max_tempo.map_or(120.0, ms_per_beat_to_bpm);
     // Unset the last point (let it be calculated by PxTone)
     song.master.loop_points.last = None;
 
