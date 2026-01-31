@@ -33,7 +33,6 @@ pub fn write_midi_to_pxtone(
     mid_data: &[u8],
     herd: &mut Herd,
     song: &mut Song,
-    base_key: u8,
 ) -> Result<Output, ConvError> {
     let mut used_programs: UsedPrograms = HashMap::new();
     let (header, track_iter) = midly::parse(mid_data).unwrap();
@@ -68,7 +67,7 @@ pub fn write_midi_to_pxtone(
                     }
                     MidiMessage::NoteOn { key, vel } => {
                         last_key = Some(key);
-                        push_key_event(song, base_key, track_idx, clock, pitch_bend, key);
+                        push_key_event(song, track_idx, clock, pitch_bend, key);
                         // If velocity is zero, we don't want to emit an `On` event.
                         if vel == 0 {
                             //continue;
@@ -130,7 +129,7 @@ pub fn write_midi_to_pxtone(
                     MidiMessage::PitchBend { bend } => {
                         pitch_bend = bend.as_f64();
                         if let Some(last) = last_key {
-                            push_key_event(song, base_key, track_idx, clock, pitch_bend, last);
+                            push_key_event(song, track_idx, clock, pitch_bend, last);
                         }
                     }
                     MidiMessage::Controller { controller, value } => {
@@ -182,14 +181,8 @@ pub fn write_midi_to_pxtone(
     Ok(Output { used_programs })
 }
 
-fn push_key_event(
-    song: &mut Song,
-    base_key: u8,
-    track_idx: usize,
-    clock: u32,
-    pitch_bend: f64,
-    key: u7,
-) {
+fn push_key_event(song: &mut Song, track_idx: usize, clock: u32, pitch_bend: f64, key: u7) {
+    let base_key = 39;
     let raw_key = (key.as_int() + base_key) as i32 * 256;
     // TODO: 2560 magic number, based on ear (and it being 10 times 256, something to do with cents?)
     let bend_mod = pitch_bend * 2560.0;
