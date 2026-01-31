@@ -48,7 +48,7 @@ pub fn write_midi_to_pxtone(
     let mut max_clock = 0;
     for (track_idx, track) in tracks.iter().enumerate() {
         let unit = Unit {
-            name: format!("Track {track_idx}-0"),
+            name: format!("mtrk{track_idx:02}"),
             ..Default::default()
         };
         if unit.name.len() >= 16 {
