@@ -55,7 +55,6 @@ pub fn write_midi_to_pxtone(
         // We assume if there is no "NoteOn" event for this track, there is no need for a unit
         let mut needs_unit = false;
         let mut clock = 0;
-        let mut clock_mul = 1.0;
         let mut pitch_bend: f64 = 0.0;
         let mut last_key = None;
         for (ev_idx, event) in track.iter().enumerate() {
@@ -155,13 +154,6 @@ pub fn write_midi_to_pxtone(
                         eprintln!("Track name: {:?}", std::str::from_utf8(name_bytes));
                     }
                     MetaMessage::EndOfTrack => {}
-                    MetaMessage::Tempo(u24) => match max_tempo {
-                        Some(max_tempo) => {
-                            let ratio = max_tempo as f64 / u24.as_int() as f64;
-                            clock_mul = ratio;
-                        }
-                        None => clock_mul = 1.0,
-                    },
                     MetaMessage::TimeSignature(num, denom, cpt, npq_32nd) => {
                         eprintln!("Time sig: {num} {denom} {cpt} {npq_32nd}");
                     }
@@ -169,7 +161,7 @@ pub fn write_midi_to_pxtone(
                 },
                 _ => eprintln!("Unhandled event kind: {:?}", event.kind),
             }
-            clock += (event.delta.as_int() as f64 * clock_mul) as u32;
+            clock += (event.delta.as_int() as f64) as u32;
         }
         max_clock = max_clock.max(clock);
         if needs_unit {
