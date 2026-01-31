@@ -46,15 +46,11 @@ pub fn write_midi_to_pxtone(
     song.master.timing.ticks_per_beat = ticks_per_beat;
     let max_tempo = get_max_tempo(&tracks);
     let mut max_clock = 0;
+    let mut unit_counter = UnitIdx(0);
     for (track_idx, track) in tracks.iter().enumerate() {
-        let unit = Unit {
-            name: format!("mtrk{track_idx:02}"),
-            ..Default::default()
-        };
-        if unit.name.len() >= 16 {
-            panic!();
-        }
-        herd.units.push(unit);
+        // Whether this track needs a unit to allocate
+        // We assume if there is no "NoteOn" event for this track, there is no need for a unit
+        let mut needs_unit = false;
         let mut clock = 0;
         let mut clock_mul = 1.0;
         let mut pitch_bend: f64 = 0.0;
@@ -66,15 +62,16 @@ pub fn write_midi_to_pxtone(
                         // We calculate how long notes last in the `NoteOn` event, so we do nothing here
                     }
                     MidiMessage::NoteOn { key, vel } => {
+                        needs_unit = true;
                         last_key = Some(key);
-                        push_key_event(song, track_idx, clock, pitch_bend, key);
+                        push_key_event(song, unit_counter, clock, pitch_bend, key);
                         // If velocity is zero, we don't want to emit an `On` event.
                         if vel == 0 {
                             //continue;
                         }
                         song.events.eves.push(Event {
                             payload: EventPayload::Velocity(i16::from(vel.as_int())),
-                            unit: UnitIdx(track_idx as u8),
+                            unit: unit_counter,
                             tick: clock,
                         });
                         // Find the next note off event for the duration
@@ -110,7 +107,7 @@ pub fn write_midi_to_pxtone(
                         }
                         song.events.eves.push(Event {
                             payload: EventPayload::On { duration },
-                            unit: UnitIdx(track_idx as u8),
+                            unit: unit_counter,
                             tick: clock,
                         });
                     }
@@ -122,14 +119,14 @@ pub fn write_midi_to_pxtone(
                         eprintln!("Instrument change of {track_idx} to {program}");
                         song.events.eves.push(Event {
                             payload: EventPayload::SetVoice(*idx),
-                            unit: UnitIdx(track_idx as u8),
+                            unit: unit_counter,
                             tick: clock,
                         });
                     }
                     MidiMessage::PitchBend { bend } => {
                         pitch_bend = bend.as_f64();
                         if let Some(last) = last_key {
-                            push_key_event(song, track_idx, clock, pitch_bend, last);
+                            push_key_event(song, unit_counter, clock, pitch_bend, last);
                         }
                     }
                     MidiMessage::Controller { controller, value } => {
@@ -139,7 +136,7 @@ pub fn write_midi_to_pxtone(
                             7 | 11 => {
                                 song.events.eves.push(Event {
                                     payload: EventPayload::Volume(value.as_int() as i16),
-                                    unit: UnitIdx(track_idx as u8),
+                                    unit: unit_counter,
                                     tick: clock,
                                 });
                             }
@@ -169,6 +166,14 @@ pub fn write_midi_to_pxtone(
             clock += (event.delta.as_int() as f64 * clock_mul) as u32;
         }
         max_clock = max_clock.max(clock);
+        if needs_unit {
+            let unit = Unit {
+                name: format!("mtrk{track_idx:02}"),
+                ..Default::default()
+            };
+            herd.units.push(unit);
+            unit_counter.0 += 1;
+        }
     }
     // TODO: Might not be correct, also individual tracks might have their own tempo
     // TODO: Magic number pulled out of thin air
@@ -181,7 +186,7 @@ pub fn write_midi_to_pxtone(
     Ok(Output { used_programs })
 }
 
-fn push_key_event(song: &mut Song, track_idx: usize, clock: u32, pitch_bend: f64, key: u7) {
+fn push_key_event(song: &mut Song, unit_idx: UnitIdx, clock: u32, pitch_bend: f64, key: u7) {
     let base_key = 39;
     let raw_key = (key.as_int() + base_key) as i32 * 256;
     // TODO: 2560 magic number, based on ear (and it being 10 times 256, something to do with cents?)
@@ -189,13 +194,13 @@ fn push_key_event(song: &mut Song, track_idx: usize, clock: u32, pitch_bend: f64
     if bend_mod != 0.0 {
         song.events.eves.push(Event {
             payload: EventPayload::PtcowDebug(bend_mod as i32),
-            unit: UnitIdx(track_idx as u8),
+            unit: unit_idx,
             tick: clock,
         });
     }
     song.events.eves.push(Event {
         payload: EventPayload::Key((raw_key as f64 + bend_mod) as i32),
-        unit: UnitIdx(track_idx as u8),
+        unit: unit_idx,
         tick: clock,
     });
 }
