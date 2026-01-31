@@ -32,9 +32,11 @@ fn dump_track(trk: &Track, i: usize) {
             midly::TrackEventKind::Midi { channel, message } => {
                 print!("[ch {channel}] ");
                 match message {
-                    midly::MidiMessage::NoteOff { key, vel } => print!("off {key} {vel}"),
-                    midly::MidiMessage::NoteOn { key, vel } => print!("on {key} {vel}"),
-                    midly::MidiMessage::Aftertouch { key, vel } => print!("touch {key} {vel}"),
+                    midly::MidiMessage::NoteOff { key, vel } => print!("off key {key} vel {vel}"),
+                    midly::MidiMessage::NoteOn { key, vel } => print!("on key {key} vel {vel}"),
+                    midly::MidiMessage::Aftertouch { key, vel } => {
+                        print!("touch key {key} vel {vel}")
+                    }
                     midly::MidiMessage::Controller { controller, value } => {
                         print!("ctrl {controller} {value}")
                     }
