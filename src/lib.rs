@@ -57,6 +57,9 @@ pub fn write_midi_to_pxtone(
         let mut pitch_bend: f64 = 0.0;
         let mut last_key = None;
         for (ev_idx, event) in track.iter().enumerate() {
+            // The delta is how much after the previous event this current event is,
+            // so we start by incrementing the clock
+            clock += (event.delta.as_int() as f64) as u32;
             match event.kind {
                 TrackEventKind::Midi { message, .. } => match message {
                     MidiMessage::NoteOff { .. } => {
@@ -76,7 +79,7 @@ pub fn write_midi_to_pxtone(
                             tick: clock,
                         });
                         // Find the next note off event for the duration
-                        let mut duration = 'block: {
+                        let duration = 'block: {
                             let mut clock2 = clock;
                             for ev in track.iter().skip(ev_idx) {
                                 clock2 += ev.delta.as_int();
@@ -101,11 +104,6 @@ pub fn write_midi_to_pxtone(
                             }
                             panic!("Couldn't determine note duration");
                         };
-                        // TODO: For some reason some notes play extremely long, but I can't figure out why
-                        if duration > 80_000 {
-                            eprintln!("HACK: Shortening note with way too long duration.");
-                            duration = 100;
-                        }
                         song.events.eves.push(Event {
                             payload: EventPayload::On { duration },
                             unit: unit_counter,
@@ -160,7 +158,6 @@ pub fn write_midi_to_pxtone(
                 },
                 _ => eprintln!("Unhandled event kind: {:?}", event.kind),
             }
-            clock += (event.delta.as_int() as f64) as u32;
         }
         max_clock = max_clock.max(clock);
         if needs_unit {
