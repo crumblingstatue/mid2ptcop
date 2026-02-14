@@ -178,7 +178,7 @@ pub fn write_midi_to_pxtone(
 }
 
 fn push_key_event(song: &mut Song, unit_idx: UnitIdx, clock: u32, pitch_bend: f64, key: u7) {
-    let base_key = 39;
+    let base_key = 27;
     let raw_key = (key.as_int() + base_key) as i32 * 256;
     // TODO: 2560 magic number, based on ear (and it being 10 times 256, something to do with cents?)
     let bend_mod = pitch_bend * 2560.0;
